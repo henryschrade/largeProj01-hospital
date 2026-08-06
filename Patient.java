@@ -18,6 +18,29 @@ public class Patient{
         this.specialCondition = specialCondition;
     }
 
+    public String getArrivalTime() {
+        return arrivalTime;
+    }
+
+    public int[] getPriorityAndId(int waitingTime) {
+        int priority = (severityLevel * 100) + waitingTime;
+
+        boolean hasSpecialCondition = specialCondition != null
+                && !specialCondition.trim().isEmpty()
+                && !specialCondition.equalsIgnoreCase("none")
+                && !specialCondition.equalsIgnoreCase("no");
+
+        if (hasSpecialCondition) {
+            priority += 10;
+        }
+
+        if (age < 18 || age >= 65) {
+            priority += 5;
+        }
+
+        return new int[]{priority, id};
+    }
+
     @Override
     public String toString() {
         return "Patient{" +
