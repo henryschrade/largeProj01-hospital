@@ -1,6 +1,9 @@
 # largeProj01-hospital
 
 Project was generated using ChatGPT on GPT-5.5
+The simulation runs every 30 minutes, not every minute, for speed purposes. to run every minute, change line 117 in Main.java to 
+"int currentTime = parseTimeToMinutes("07:30"); currentTime <= queryTime; currentTime += 1"
+
 
 # Project: Hospital Emergency Room Simulation
 
