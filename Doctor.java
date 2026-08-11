@@ -1,3 +1,5 @@
+import java.util.ArrayList;
+
 public class Doctor{
     private int id;
     private String name;
@@ -9,6 +11,7 @@ public class Doctor{
     private int treatmentStartTime;
     private int currentPatientId;
     private String currentPatientName;
+    private ArrayList<DoctorVisit> visitHistory;
 
     public Doctor(int id, String name, String specialty, String shiftStart, String shiftEnd) {
         this.id = id;
@@ -21,6 +24,7 @@ public class Doctor{
         this.treatmentStartTime = -1;
         this.currentPatientId = -1;
         this.currentPatientName = null;
+        this.visitHistory = new ArrayList<>();
     }
 
     public int getId() {
@@ -68,6 +72,11 @@ public class Doctor{
         this.treatmentStartTime = currentTime;
         this.busyUntil = currentTime + treatmentTime;
         this.patientsTreated++;
+        visitHistory.add(new DoctorVisit(patientId, patientName, currentTime, currentTime + treatmentTime));
+    }
+
+    public ArrayList<DoctorVisit> getVisitHistory() {
+        return visitHistory;
     }
 
     public int[] getSortInfo(int currentTime) {
@@ -120,5 +129,35 @@ public class Doctor{
                 ", shiftStart='" + shiftStart + '\'' +
                 ", shiftEnd='" + shiftEnd + '\'' +
                 '}';
+    }
+
+    public static class DoctorVisit {
+        private int patientId;
+        private String patientName;
+        private int startTime;
+        private int endTime;
+
+        public DoctorVisit(int patientId, String patientName, int startTime, int endTime) {
+            this.patientId = patientId;
+            this.patientName = patientName;
+            this.startTime = startTime;
+            this.endTime = endTime;
+        }
+
+        public int getPatientId() {
+            return patientId;
+        }
+
+        public String getPatientName() {
+            return patientName;
+        }
+
+        public int getStartTime() {
+            return startTime;
+        }
+
+        public int getEndTime() {
+            return endTime;
+        }
     }
 }

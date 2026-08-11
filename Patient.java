@@ -6,6 +6,10 @@ public class Patient{
     private int severityLevel;
     private int estimatedTreatmentTime;
     private String specialCondition;
+    private int assignedDoctorId = -1;
+    private String assignedDoctorName;
+    private int treatmentStartTime = -1;
+    private int treatmentEndTime = -1;
 
     public Patient(int id, String name, int age, String arrivalTime, int severityLevel,
                    int estimatedTreatmentTime, String specialCondition) {
@@ -50,8 +54,40 @@ public class Patient{
         return estimatedTreatmentTime;
     }
 
+    public void recordDoctorAssignment(int doctorId, String doctorName, int startTime, int endTime) {
+        this.assignedDoctorId = doctorId;
+        this.assignedDoctorName = doctorName;
+        this.treatmentStartTime = startTime;
+        this.treatmentEndTime = endTime;
+    }
+
+    public boolean hasBeenAssigned() {
+        return assignedDoctorId >= 0;
+    }
+
+    public int getAssignedDoctorId() {
+        return assignedDoctorId;
+    }
+
+    public String getAssignedDoctorName() {
+        return assignedDoctorName;
+    }
+
+    public int getTreatmentStartTime() {
+        return treatmentStartTime;
+    }
+
+    public int getTreatmentEndTime() {
+        return treatmentEndTime;
+    }
+
     public Patient copy() {
-        return new Patient(id, name, age, arrivalTime, severityLevel, estimatedTreatmentTime, specialCondition);
+        Patient copy = new Patient(id, name, age, arrivalTime, severityLevel, estimatedTreatmentTime, specialCondition);
+        copy.assignedDoctorId = assignedDoctorId;
+        copy.assignedDoctorName = assignedDoctorName;
+        copy.treatmentStartTime = treatmentStartTime;
+        copy.treatmentEndTime = treatmentEndTime;
+        return copy;
     }
 
     public int[] getPriorityAndId(int waitingTime) {

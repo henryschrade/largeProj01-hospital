@@ -67,33 +67,51 @@ public class Main{
    
         Scanner inputScanner = new Scanner(System.in);
         while (true) {
-            System.out.print("Enter a time (HH:mm) or 'end day': ");
+            System.out.print("Enter a time (HH:mm), doctor full name, patient full name, or 'end day': ");
             String input = inputScanner.nextLine().trim();
             if (input.equalsIgnoreCase("end day")) {
                 ArrayList<Doctor> doctorSnapshot = cloneDoctors(doctors);
                 ArrayList<Patient> patientSnapshot = clonePatients(patients);
-                simulateToTime(patientSnapshot, doctorSnapshot, parseTimeToMinutes("19:00"));
-                printEndOfDayStats(patientSnapshot, doctorSnapshot, parseTimeToMinutes("19:00"));
+                ArrayList<Patient> waitingPatients = simulateToTime(patientSnapshot, doctorSnapshot, parseTimeToMinutes("19:00"));
+                printEndOfDayStats(waitingPatients, doctorSnapshot, parseTimeToMinutes("19:00"));
                 break;
             }
 
             int queryTime;
+            boolean isTimeQuery = true;
             try {
                 queryTime = parseTimeToMinutes(input);
             } catch (NumberFormatException e) {
-                System.out.println("Invalid time format. Use HH:mm or enter 'end day'.");
-                continue;
+                isTimeQuery = false;
+                queryTime = -1;
             }
 
-            if (queryTime < parseTimeToMinutes("07:30") || queryTime > parseTimeToMinutes("19:00")) {
-                System.out.println("Time must be between 07:30 and 19:00.");
-                continue;
-            }
+            if (isTimeQuery) {
+                if (queryTime < parseTimeToMinutes("07:30") || queryTime > parseTimeToMinutes("19:00")) {
+                    System.out.println("Time must be between 07:30 and 19:00.");
+                    continue;
+                }
 
                 ArrayList<Doctor> doctorSnapshot = cloneDoctors(doctors);
-            ArrayList<Patient> patientSnapshot = clonePatients(patients);
-            simulateToTime(patientSnapshot, doctorSnapshot, queryTime);
-            printSnapshot(patientSnapshot, doctorSnapshot, queryTime);
+                ArrayList<Patient> patientSnapshot = clonePatients(patients);
+                ArrayList<Patient> waitingPatients = simulateToTime(patientSnapshot, doctorSnapshot, queryTime);
+                printSnapshot(waitingPatients, doctorSnapshot, queryTime);
+                continue;
+            }
+
+            Doctor foundDoctor = findDoctorByName(doctors, input);
+            if (foundDoctor != null) {
+                        printDoctorHistory(foundDoctor.getId(), doctors, patients);
+                continue;
+            }
+
+            Patient foundPatient = findPatientByName(patients, input);
+            if (foundPatient != null) {
+                printPatientHistory(foundPatient.getId(), doctors, patients);
+                continue;
+            }
+
+            System.out.println("No matching time, doctor, or patient found for '" + input + "'.");
         }
     }
 
@@ -113,10 +131,12 @@ public class Main{
         return copy;
     }
 
-    private static void simulateToTime(ArrayList<Patient> patients, ArrayList<Doctor> doctors, int queryTime) {
+    private static ArrayList<Patient> simulateToTime(ArrayList<Patient> patients, ArrayList<Doctor> doctors, int queryTime) {
+        ArrayList<Patient> waitingPatients = new ArrayList<>(patients);
         for (int currentTime = parseTimeToMinutes("07:30"); currentTime <= queryTime; currentTime += 30) {
-            runPriorityMixesSilent(patients, doctors, currentTime);
+            runPriorityMixesSilent(waitingPatients, doctors, currentTime);
         }
+        return waitingPatients;
     }
 
     private static void runPriorityMixesSilent(ArrayList<Patient> patients, ArrayList<Doctor> doctors, int currentTime) {
@@ -163,6 +183,7 @@ public class Main{
             }
 
             assignedDoctor.startTreatment(assignedPatient.getId(), assignedPatient.getName(), assignedPatient.getEstimatedTreatmentTime(), currentTime);
+            assignedPatient.recordDoctorAssignment(assignedDoctor.getId(), assignedDoctor.getName(), currentTime, currentTime + assignedPatient.getEstimatedTreatmentTime());
             patients.remove(assignedPatient);
         }
     }
@@ -341,6 +362,78 @@ public class Main{
             }
         }
         return null;
+    }
+
+    private static Doctor findDoctorByName(ArrayList<Doctor> doctors, String name) {
+        String normalizedQuery = normalizeFullName(name);
+        for (Doctor doctor : doctors) {
+            if (normalizeFullName(doctor.getName()).equals(normalizedQuery)) {
+                return doctor;
+            }
+        }
+        return null;
+    }
+
+    private static Patient findPatientByName(ArrayList<Patient> patients, String name) {
+        String normalizedQuery = normalizeFullName(name);
+        for (Patient patient : patients) {
+            if (normalizeFullName(patient.getName()).equals(normalizedQuery)) {
+                return patient;
+            }
+        }
+        return null;
+    }
+
+    private static String normalizeFullName(String name) {
+        if (name == null) {
+            return "";
+        }
+        return name.trim().replaceAll("\\s+", " ").toLowerCase();
+    }
+
+    private static void printDoctorHistory(int doctorId, ArrayList<Doctor> doctors, ArrayList<Patient> patients) {
+        ArrayList<Doctor> doctorSnapshot = cloneDoctors(doctors);
+        ArrayList<Patient> patientSnapshot = clonePatients(patients);
+        simulateToTime(patientSnapshot, doctorSnapshot, parseTimeToMinutes("19:00"));
+
+        Doctor doctor = findDoctorById(doctorSnapshot, doctorId);
+        if (doctor == null) {
+            System.out.println("Doctor not found in simulated history.");
+            return;
+        }
+
+        System.out.println("\n===== Doctor History: " + doctor.getName() + " =====");
+        ArrayList<Doctor.DoctorVisit> visits = doctor.getVisitHistory();
+        if (visits.isEmpty()) {
+            System.out.println("No patients were seen by " + doctor.getName() + " today.");
+            return;
+        }
+
+        for (Doctor.DoctorVisit visit : visits) {
+            System.out.println("- " + visit.getPatientName() + ": " + formatTime(visit.getStartTime()) + " - " + formatTime(visit.getEndTime()));
+        }
+    }
+
+    private static void printPatientHistory(int patientId, ArrayList<Doctor> doctors, ArrayList<Patient> patients) {
+        ArrayList<Doctor> doctorSnapshot = cloneDoctors(doctors);
+        ArrayList<Patient> patientSnapshot = clonePatients(patients);
+        simulateToTime(patientSnapshot, doctorSnapshot, parseTimeToMinutes("19:00"));
+
+        Patient patient = findPatientById(patientSnapshot, patientId);
+        if (patient == null) {
+            System.out.println("Patient not found in simulated history.");
+            return;
+        }
+
+        System.out.println("\n===== Patient History: " + patient.getName() + " =====");
+        System.out.println("Arrival time: " + patient.getArrivalTime());
+        if (patient.hasBeenAssigned()) {
+            System.out.println("Doctor assignment start: " + formatTime(patient.getTreatmentStartTime()));
+            System.out.println("Finished at: " + formatTime(patient.getTreatmentEndTime()));
+            System.out.println("Doctor: " + patient.getAssignedDoctorName());
+        } else {
+            System.out.println("No doctor assignment was made for this patient today.");
+        }
     }
 
     private static String formatTime(int currentTime) {
