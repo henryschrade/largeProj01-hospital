@@ -22,6 +22,38 @@ public class Patient{
         return arrivalTime;
     }
 
+    public int getId() {
+        return id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public boolean hasArrived(int currentTime) {
+        int arrivalMinutes = parseTimeToMinutes(arrivalTime);
+        return arrivalMinutes <= currentTime;
+    }
+
+    private int parseTimeToMinutes(String timeValue) {
+        String normalized = timeValue.replace(":", "");
+        if (normalized.length() == 3) {
+            normalized = "0" + normalized;
+        }
+
+        int hours = Integer.parseInt(normalized.substring(0, 2));
+        int minutes = Integer.parseInt(normalized.substring(2, 4));
+        return (hours * 60) + minutes;
+    }
+
+    public int getEstimatedTreatmentTime() {
+        return estimatedTreatmentTime;
+    }
+
+    public Patient copy() {
+        return new Patient(id, name, age, arrivalTime, severityLevel, estimatedTreatmentTime, specialCondition);
+    }
+
     public int[] getPriorityAndId(int waitingTime) {
         int priority = (severityLevel * 100) + waitingTime;
 
